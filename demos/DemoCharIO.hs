@@ -1,4 +1,4 @@
-module Main where
+module DemoCharIO where
 
 import Sprockell
 import Data.Char
