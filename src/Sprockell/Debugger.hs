@@ -3,6 +3,7 @@ import Sprockell.HardwareTypes
 import Control.Monad (when, void)
 import System.IO (Handle,hPutStrLn,hGetLine)
 import Text.Printf
+import Text.PrettyPrint.Boxes
 
 -- | A Debugger will get this as input each clock cycle:
 --   * a list of current 'Instruction's, one for each Sprockell core
@@ -72,8 +73,7 @@ myShow (instrs,s) = printf "instrs: %s\nsprStates:\n%s\nrequests: %s\nreplies: %
                     (show $ requestFifo s)
                     (show $ sharedMem s)
 
-myShow' (instrs,s) = show instrs ++ "\n"
-                     ++ (unlines $ map show $ sprStates s)
+myShow' (instrs,s) = render $ para left 200 $ (show instrs) ++ (unlines (map show $ sprStates s))
 
 
 -- ======================================================================
