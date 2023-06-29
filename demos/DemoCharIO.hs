@@ -68,6 +68,8 @@ main_0 = runWithDebugger noDebugger [prog]
 -- main_1: shows all intermediate local states
 main_1 = runWithDebugger (debuggerSimplePrint showLocalMem) [prog]
 
+main_4 = runWithDebugger(debuggerSimplePrint myShow') [prog]
+
 showLocalMem :: DbgInput -> String
 showLocalMem ( _ , systemState ) = show $ localMem $ head $ sprStates systemState
 

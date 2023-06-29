@@ -35,6 +35,7 @@ prog = [
       Receive regA,           -- wait on lock attempt result
       Branch regA (Rel 2),    -- jump out of loop on sucessfull lock 
       Jump (Rel (-3)),         -- re-try lock on failure.   
+      
       -- begin critial section
       ReadInstr (DirAddr 2),
       Receive regB,
