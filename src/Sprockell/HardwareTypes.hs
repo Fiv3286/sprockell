@@ -21,6 +21,7 @@ import qualified Data.Foldable as Foldable
 type CodeAddr   = Int                                           -- * Instruction Address in Assembly Program (Program Counter)
 type RegAddr    = Int                                           -- * Register Address
 type MemAddr    = Int                                           -- * Local Memory Address (incl Stack Pointer)
+type Label      = String
 
 type Value      = Int
 type SprID      = Value
@@ -153,6 +154,8 @@ data Instruction = Compute Operator RegAddr RegAddr RegAddr     -- Compute op r0
                                                                 -- this instruction, the simulation will halt.
 
                  | Nop                                          -- Operation "do nothing"
+                 
+                 | LabelInst Label
 
                  | Debug String                                 -- No real instruction, for debug purposes.
                  deriving (Eq,Show,Read)
@@ -163,6 +166,7 @@ data Instruction = Compute Operator RegAddr RegAddr RegAddr     -- Compute op r0
 data Target     = Abs CodeAddr                                  -- Abs n: instruction n
                 | Rel CodeAddr                                  -- Rel n: increase current program counter with n
                 | Ind RegAddr                                   -- Ind r: value of new program counter is in register r
+                | Lab Label                
                 deriving (Eq,Show,Read)
 
 data TargetCode = NoJump                                        -- code to indicate in machine code how to jump

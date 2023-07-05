@@ -7,6 +7,8 @@ import Data.Bits
 import Sprockell.BasicFunctions
 import Sprockell.HardwareTypes
 
+import qualified Data.Array    as Array
+
 {-------------------------------------------------------------
 | SPROCKELL: Simple PROCessor in hasKELL :-)
 |
@@ -29,7 +31,12 @@ sprockell :: InstructionMem -> SprockellState -> Reply -> (SprockellState, Reque
 sprockell instrs sprState reply = (sprState', request)
     where
         SprState{..} = sprState
-        MachCode{..} = decode (instrs!pc)
+        MachCode{..} = case instrs!pc of
+                -- these instructions handle Jump and Branch to label
+                -- they are outside of decode to be able to access the InstructionMem
+                Jump (Lab l) -> nullcode {tgtCode=TAbs,immValue = findLabel l instrs}
+                Branch cReg (Lab l ) -> nullcode {branch=True, tgtCode=TAbs, regX=cReg, immValue= findLabel l instrs}
+                inst -> decode inst
 
         regbankExtended = regbank ++ [sp,pc] -- allow reading of sp and pc
 
@@ -87,11 +94,13 @@ decode instr = case instr of
                                    Abs n       -> nullcode {tgtCode=TAbs, immValue=n}
                                    Rel n       -> nullcode {tgtCode=TRel, immValue=n}
                                    Ind r       -> nullcode {tgtCode=TInd, regY=r}
+                                   Lab l       -> nullcode
 
   Branch cReg target          -> case target of
                                    Abs n       -> nullcode {branch=True, tgtCode=TAbs, regX=cReg, immValue=n}
                                    Rel n       -> nullcode {branch=True, tgtCode=TRel, regX=cReg, immValue=n}
                                    Ind r       -> nullcode {branch=True, tgtCode=TInd, regX=cReg, regY=r}
+                                   Lab l       -> nullcode
 
   Load memAddr toReg          -> case memAddr of
                                    ImmValue n  -> nullcode {loadReg=toReg, ldCode=LdImm, immValue=n}
@@ -129,6 +138,8 @@ decode instr = case instr of
   Nop                         -> nullcode
 
   Debug _                     -> nullcode       -- only for development purposes
+
+  LabelInst label             -> nullcode       -- instruction to jump to
 
 
 {- ===============================================================
@@ -260,3 +271,16 @@ sendOut ioCode address value = case ioCode of
         IORead    -> ReadReq  address
         IOWrite   -> WriteReq value address
         IOTest    -> TestReq  address
+
+
+-- =====================================================================================
+-- findLabel: finds label in a list of instructions and return its address
+-- =====================================================================================
+findLabel :: Label -> InstructionMem -> Value
+findLabel l instrs = findLabel' l (Array.assocs instrs)
+
+findLabel' :: Label -> [(Int, Instruction)] -> Value
+findLabel' l []  = error "this label doesn't exist"
+findLabel' l ((i, LabelInst label):rest) | l == label =  i
+                                         | otherwise  = findLabel' l rest
+findLabel' l ((_ :rest)) = findLabel' l rest
